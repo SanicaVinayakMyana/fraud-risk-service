@@ -1,0 +1,97 @@
+plugins {
+    id 'java'
+    id 'groovy'
+    id 'application'
+    id 'jacoco'
+}
+
+group = 'com.sanica'
+version = '1.0.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    jacksonVersion = '2.18.1'
+    testcontainersVersion = '1.20.3'
+}
+
+dependencies {
+    implementation 'io.javalin:javalin:6.3.0'
+    implementation "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion"
+    implementation 'redis.clients:jedis:5.2.0'
+    implementation 'com.microsoft.onnxruntime:onnxruntime:1.19.2'
+    implementation 'io.micrometer:micrometer-registry-prometheus:1.13.6'
+    implementation 'org.slf4j:slf4j-simple:2.0.16'
+
+    testImplementation platform('org.spockframework:spock-bom:2.3-groovy-4.0')
+    testImplementation 'org.spockframework:spock-core'
+    testImplementation 'org.apache.groovy:groovy:4.0.24'
+    testImplementation 'org.apache.groovy:groovy-json:4.0.24'
+    testImplementation "org.testcontainers:testcontainers:$testcontainersVersion"
+    testImplementation 'com.github.codemonstur:embedded-redis:1.4.3'
+}
+
+application {
+    mainClass = 'com.sanica.risk.Application'
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+    maxHeapSize = '1g'
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+        exceptionFormat = 'full'
+    }
+    finalizedBy tasks.named('jacocoTestReport')
+}
+
+jacocoTestReport {
+    dependsOn tasks.named('test')
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                counter = 'LINE'
+                minimum = 0.85
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('jacocoTestCoverageVerification')
+}
+
+// Runs the service with no Redis: in-memory velocity store and in-process event queue, demo traffic on.
+tasks.register('runLocal', JavaExec) {
+    group = 'application'
+    description = 'Runs the risk service locally with in-memory state; no setup required.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.sanica.risk.Application'
+    environment 'DEMO_MODE', 'true'
+}
+
+// Replays simulated traffic through the production feature code and writes the model's training set.
+// The model is trained on exactly the features the service computes, so there is no training/serving skew.
+tasks.register('exportTrainingData', JavaExec) {
+    group = 'ml'
+    description = 'Writes ml/data/features.csv from simulated traffic.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.sanica.risk.sim.TrainingDataExporter'
+    args 'ml/data/features.csv'
+}

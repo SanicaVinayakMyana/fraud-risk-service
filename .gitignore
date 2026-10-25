@@ -1,0 +1,11 @@
+.gradle/
+build/
+out/
+.idea/
+*.iml
+.vscode/
+.DS_Store
+*.log
+ml/data/
+ml/.venv/
+__pycache__/

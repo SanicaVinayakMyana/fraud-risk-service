@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Risk Scoring</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>Risk Scoring</h1>
+    <p class="sub">Real-time fraud decisions for the payments ledger</p>
+  </div>
+  <dl class="versions">
+    <div><dt>Model</dt><dd id="model">…</dd></div>
+    <div><dt>Rules</dt><dd id="rules-version">…</dd></div>
+  </dl>
+</header>
+
+<main>
+  <section class="tiles" aria-label="Recent decisions">
+    <div class="tile"><span class="label">Allow</span><span class="value allow" id="n-allow">0</span></div>
+    <div class="tile"><span class="label">Review</span><span class="value review" id="n-review">0</span></div>
+    <div class="tile"><span class="label">Block</span><span class="value block" id="n-block">0</span></div>
+    <div class="tile"><span class="label">p99 latency</span><span class="value" id="p99">–</span></div>
+    <div class="tile"><span class="label">Shadow divergences</span><span class="value" id="divergent">0</span></div>
+  </section>
+
+  <section class="panel" id="attacks-panel" hidden>
+    <h2>Simulate an attack</h2>
+    <p class="hint">Demo mode is on. Each button plays a fraud pattern against a random demo customer.</p>
+    <div class="buttons">
+      <button data-attack="card-testing">Card testing</button>
+      <button data-attack="account-takeover">Account takeover</button>
+      <button data-attack="mule-fan-out">Mule fan-out</button>
+      <button data-attack="amount-spike">Amount spike</button>
+    </div>
+    <p class="hint" id="attack-status"></p>
+  </section>
+
+  <section class="panel">
+    <h2>Live decisions</h2>
+    <div class="scroll">
+      <table>
+        <thead>
+        <tr><th>Time</th><th>Account</th><th>Decision</th><th>Score</th><th>ML</th><th>Primary reason</th><th>Shadow</th><th>µs</th></tr>
+        </thead>
+        <tbody id="decisions"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="columns">
+    <section class="panel">
+      <h2>Rules</h2>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Rule</th><th>Points</th><th>Mode</th><th></th></tr></thead>
+          <tbody id="rules"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Shadow report</h2>
+      <p class="hint">What each shadow rule would have changed if it were enforced.</p>
+      <div class="scroll">
+        <table>
+          <thead><tr><th>Rule</th><th>Hits</th><th>Hit rate</th><th>Would change</th></tr></thead>
+          <tbody id="shadow"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+<script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "version": "iforest-wrong",
+  "inputName": "features",
+  "scoreOutput": "scores",
+  "features": ["amount", "count"],
+  "center": 0.0,
+  "scale": 0.03,
+  "metrics": {}
+}

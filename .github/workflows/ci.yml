@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Redis-backed tests run against Redis 7 in Docker via Testcontainers.
+      # `check` also enforces the 85% line-coverage gate.
+      - name: Build, test and verify coverage
+        run: ./gradlew --no-daemon build
+
+      - name: Upload test and coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: |
+            build/reports/tests/test
+            build/reports/jacoco/test
+
+      - name: Build container image
+        run: docker build -t fraud-risk-service:${{ github.sha }} .
+
+  # Rebuilds the training set from the Java feature code, retrains, and fails if the model got worse or the
+  # ONNX export stopped matching scikit-learn. The committed model is not replaced by this job.
+  model:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: ml/requirements.txt
+
+      - name: Export training data
+        run: ./gradlew --no-daemon exportTrainingData
+
+      - name: Train and export
+        run: |
+          pip install -r ml/requirements.txt
+          python ml/train_isolation_forest.py ml/data/features.csv build/model
+
+      - name: Check model quality
+        run: |
+          python - <<'EOF'
+          import json
+          m = json.load(open("build/model/model-metadata.json"))["metrics"]
+          print(json.dumps(m, indent=2))
+          assert m["rocAuc"] >= 0.95, m["rocAuc"]
+          assert m["recallAt1PctFpr"] >= 0.8, m["recallAt1PctFpr"]
+          assert m["onnxMaxAbsError"] < 1e-4, m["onnxMaxAbsError"]
+          EOF

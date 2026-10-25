@@ -1,0 +1,53 @@
+# The two microservices together: the payments ledger (project 1) books money movements, this service scores them.
+#   ledger  -> http://localhost:8080   (dashboard + API)
+#   risk    -> http://localhost:8081   (dashboard + API, demo traffic on)
+# The risk service pulls new ledger transactions (LEDGER_URL) and also consumes the ledger.transactions stream,
+# so any producer can XADD events to Redis directly.
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ledger
+      POSTGRES_USER: ledger
+      POSTGRES_PASSWORD: ledger
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ledger -d ledger"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  ledger:
+    build: https://github.com/SanicaVinayakMyana/payments-ledger.git#main
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/ledger
+      DB_USER: ledger
+      DB_PASSWORD: ledger
+      REDIS_URL: redis://redis:6379
+    ports:
+      - "8080:8080"
+
+  risk:
+    build: .
+    depends_on:
+      redis:
+        condition: service_started
+      ledger:
+        condition: service_started
+    environment:
+      REDIS_URL: redis://redis:6379
+      LEDGER_URL: http://ledger:8080
+      LATENCY_BUDGET_MS: "50"
+      FALLBACK_DECISION: REVIEW
+      DEMO_MODE: "true"
+    ports:
+      - "8081:8081"

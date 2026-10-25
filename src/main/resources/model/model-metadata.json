@@ -1,0 +1,45 @@
+{
+  "version": "iforest-20261025-5c446fb5",
+  "inputName": "features",
+  "scoreOutput": "scores",
+  "features": [
+    "log_amount_usd",
+    "tx_count_60s",
+    "tx_count_1h",
+    "log_amount_sum_1h_usd",
+    "distinct_counterparties_1h",
+    "new_device",
+    "new_country",
+    "amount_zscore",
+    "log_seconds_since_last_tx",
+    "hour_sin",
+    "hour_cos"
+  ],
+  "center": 0.0,
+  "scale": 0.027419438337177568,
+  "metrics": {
+    "rocAuc": 0.9994,
+    "prAuc": 0.9355,
+    "recallAt1PctFpr": 0.9911,
+    "recallAt5PctFpr": 1.0,
+    "trainRows": 201719,
+    "testRows": 50392,
+    "testFraudRate": 0.00671,
+    "flaggedShareByScenario": {
+      "ACCOUNT_TAKEOVER": 1.0,
+      "AMOUNT_SPIKE": 1.0,
+      "CARD_TESTING": 0.9876,
+      "MULE_FAN_OUT": 0.9384,
+      "NORMAL": 0.0036
+    },
+    "onnxMaxAbsError": 2.3147230293618648e-07,
+    "onnxSingleRowMicros": 17.6
+  },
+  "params": {
+    "n_estimators": 200,
+    "max_samples": 512,
+    "contamination": 0.01,
+    "random_state": 42
+  },
+  "trainedAt": "2026-10-25T11:06:58+00:00"
+}

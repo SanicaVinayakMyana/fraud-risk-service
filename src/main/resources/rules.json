@@ -1,0 +1,137 @@
+{
+  "version": "2026-10-25.1",
+  "rules": [
+    {
+      "id": "VELOCITY_60S",
+      "description": "More than 5 transactions on the account in 60 seconds",
+      "reasonCode": "VELOCITY_60S",
+      "points": 45,
+      "mode": "ENFORCE",
+      "when": { "field": "txCount60s", "op": ">", "value": 5 }
+    },
+    {
+      "id": "CARD_TESTING",
+      "description": "Burst of small card payments, typical of testing stolen card numbers",
+      "reasonCode": "CARD_TESTING",
+      "points": 60,
+      "action": "BLOCK",
+      "mode": "ENFORCE",
+      "when": {
+        "all": [
+          { "field": "channel", "in": ["CARD"] },
+          { "field": "txCount60s", "op": ">=", "value": 8 },
+          { "field": "amountUsd", "op": "<", "value": 10 }
+        ]
+      }
+    },
+    {
+      "id": "VELOCITY_1H",
+      "description": "More than 30 transactions on the account in an hour",
+      "reasonCode": "VELOCITY_1H",
+      "points": 35,
+      "mode": "ENFORCE",
+      "when": { "field": "txCount1h", "op": ">", "value": 30 }
+    },
+    {
+      "id": "NEW_DEVICE_HIGH_AMOUNT",
+      "description": "First payment from this device and amount of at least 1,000 USD",
+      "reasonCode": "NEW_DEVICE_HIGH_AMOUNT",
+      "points": 55,
+      "mode": "ENFORCE",
+      "when": {
+        "all": [
+          { "field": "newDevice", "op": "==", "value": true },
+          { "field": "amountUsd", "op": ">=", "value": 1000 }
+        ]
+      }
+    },
+    {
+      "id": "NEW_COUNTRY_HIGH_AMOUNT",
+      "description": "First payment from this country and amount of at least 500 USD",
+      "reasonCode": "NEW_COUNTRY_HIGH_AMOUNT",
+      "points": 40,
+      "mode": "ENFORCE",
+      "when": {
+        "all": [
+          { "field": "newCountry", "op": "==", "value": true },
+          { "field": "amountUsd", "op": ">=", "value": 500 }
+        ]
+      }
+    },
+    {
+      "id": "AMOUNT_SPIKE",
+      "description": "Amount far above the account's usual spend",
+      "reasonCode": "AMOUNT_SPIKE",
+      "points": 30,
+      "mode": "ENFORCE",
+      "when": {
+        "all": [
+          { "field": "amountZScore", "op": ">", "value": 6 },
+          { "field": "amountUsd", "op": ">=", "value": 250 }
+        ]
+      }
+    },
+    {
+      "id": "MULE_FAN_OUT",
+      "description": "Money sent to 8 or more different counterparties within an hour",
+      "reasonCode": "MULE_FAN_OUT",
+      "points": 45,
+      "mode": "ENFORCE",
+      "when": {
+        "all": [
+          { "field": "channel", "in": ["TRANSFER"] },
+          { "field": "distinctCounterparties1h", "op": ">=", "value": 8 }
+        ]
+      }
+    },
+    {
+      "id": "HARD_AMOUNT_LIMIT",
+      "description": "Single payment above 25,000 USD",
+      "reasonCode": "HARD_AMOUNT_LIMIT",
+      "points": 100,
+      "action": "BLOCK",
+      "mode": "ENFORCE",
+      "when": { "field": "amountUsd", "op": ">", "value": 25000 }
+    },
+    {
+      "id": "FIRST_TX_HIGH_AMOUNT",
+      "description": "Account's very first payment is at least 2,000 USD",
+      "reasonCode": "FIRST_TX_HIGH_AMOUNT",
+      "points": 50,
+      "mode": "SHADOW",
+      "when": {
+        "all": [
+          { "field": "priorTxCount", "op": "==", "value": 0 },
+          { "field": "amountUsd", "op": ">=", "value": 2000 }
+        ]
+      }
+    },
+    {
+      "id": "RAPID_REPEAT",
+      "description": "Less than 3 seconds since the previous payment on the account",
+      "reasonCode": "RAPID_REPEAT",
+      "points": 25,
+      "mode": "SHADOW",
+      "when": {
+        "all": [
+          { "field": "secondsSinceLastTx", "op": ">=", "value": 0 },
+          { "field": "secondsSinceLastTx", "op": "<", "value": 3 }
+        ]
+      }
+    },
+    {
+      "id": "NIGHT_NEW_DEVICE",
+      "description": "Payment between 01:00 and 05:00 UTC from a new device",
+      "reasonCode": "NIGHT_NEW_DEVICE",
+      "points": 30,
+      "mode": "SHADOW",
+      "when": {
+        "all": [
+          { "field": "newDevice", "op": "==", "value": true },
+          { "field": "hourOfDay", "op": ">=", "value": 1 },
+          { "field": "hourOfDay", "op": "<", "value": 5 }
+        ]
+      }
+    }
+  ]
+}
